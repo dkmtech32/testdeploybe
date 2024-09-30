@@ -1,0 +1,76 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pickleballvn-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    networks:
+      - pickleballvn
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql_db
+      DB_DATABASE: laravel
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+  mysql_db:
+    image: mysql:8.0
+    container_name: pickleballvn-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - pickleballvn
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: pickleballvn-pma
+    restart: unless-stopped
+    ports:
+      - "9001:80"
+    environment:
+      - PMA_HOST=mysql_db
+    networks:
+      - pickleballvn
+    depends_on:
+      - mysql_db
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    container_name: pickleballvn-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - app
+    networks:
+      - pickleballvn
+
+networks:
+  pickleballvn:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local

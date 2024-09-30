@@ -1,0 +1,7 @@
+FROM mysql:8.0
+
+# Set MySQL configuration
+COPY my.cnf /etc/mysql/conf.d/my.cnf
+
+# Set character set and collation
+CMD ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
